@@ -1,211 +1,224 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cellular Automaton</title>
     <style>
-        /* Remove any default margin and padding, set grid to take full viewport */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+      /* Remove any default margin and padding, set grid to take full viewport */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #000;
+      }
+      .grid {
+        display: grid;
+        background-color: #000;
+      }
+      .cell {
+        width: 20px;
+        height: 20px;
+        background-color: transparent; /* Remove solid color */
+      }
+      .cell.alive {
+        /* Glowing effect without the solid cube */
+        animation: colorGlow 1.5s infinite alternate;
+        filter: blur(8px); /* Increased blur to create a soft, merged glow */
+        box-shadow:
+          0 0 20px 10px rgba(255, 0, 0, 0.6),
+          0 0 40px 20px rgba(255, 0, 0, 0.4);
+      }
+      /* Define color glow animation */
+      @keyframes colorGlow {
+        0% {
+          box-shadow:
+            0 0 20px 10px rgba(255, 0, 0, 0.6),
+            0 0 40px 20px rgba(255, 0, 0, 0.4);
         }
-        html, body {
-            height: 100%;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #000;
+        25% {
+          box-shadow:
+            0 0 20px 10px rgba(0, 255, 0, 0.6),
+            0 0 40px 20px rgba(0, 255, 0, 0.4);
         }
-        .grid {
-            display: grid;
-            background-color: #000;
+        50% {
+          box-shadow:
+            0 0 20px 10px rgba(0, 0, 255, 0.6),
+            0 0 40px 20px rgba(0, 0, 255, 0.4);
         }
-        .cell {
-            width: 20px;
-            height: 20px;
-            background-color: transparent; /* Remove solid color */
+        75% {
+          box-shadow:
+            0 0 20px 10px rgba(255, 0, 255, 0.6),
+            0 0 40px 20px rgba(255, 0, 255, 0.4);
         }
-        .cell.alive {
-            /* Glowing effect without the solid cube */
-            animation: colorGlow 1.5s infinite alternate;
-            filter: blur(8px); /* Increased blur to create a soft, merged glow */
-            box-shadow: 0 0 20px 10px rgba(255, 0, 0, 0.6), 
-                        0 0 40px 20px rgba(255, 0, 0, 0.4);
+        100% {
+          box-shadow:
+            0 0 20px 10px rgba(255, 255, 0, 0.6),
+            0 0 40px 20px rgba(255, 255, 0, 0.4);
         }
-        /* Define color glow animation */
-        @keyframes colorGlow {
-            0% {
-                box-shadow: 0 0 20px 10px rgba(255, 0, 0, 0.6), 
-                            0 0 40px 20px rgba(255, 0, 0, 0.4);
-            }
-            25% {
-                box-shadow: 0 0 20px 10px rgba(0, 255, 0, 0.6), 
-                            0 0 40px 20px rgba(0, 255, 0, 0.4);
-            }
-            50% {
-                box-shadow: 0 0 20px 10px rgba(0, 0, 255, 0.6), 
-                            0 0 40px 20px rgba(0, 0, 255, 0.4);
-            }
-            75% {
-                box-shadow: 0 0 20px 10px rgba(255, 0, 255, 0.6), 
-                            0 0 40px 20px rgba(255, 0, 255, 0.4);
-            }
-            100% {
-                box-shadow: 0 0 20px 10px rgba(255, 255, 0, 0.6), 
-                            0 0 40px 20px rgba(255, 255, 0, 0.4);
-            }
-        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div id="grid" class="grid"></div>
 
     <script>
-        // Configuration
-        const cellSize = 20;
-        const gridElement = document.getElementById("grid");
+      // Configuration
+      const cellSize = 20;
+      const gridElement = document.getElementById("grid");
 
-        let cells = [];
-        let interval;
-        let isMouseDown = false;
-        let toggleMode = null;
-        let lastCellPosition = null;
+      let cells = [];
+      let interval;
+      let isMouseDown = false;
+      let toggleMode = null;
+      let lastCellPosition = null;
 
-        function calculateGridSize() {
-            const gridWidth = Math.floor(window.innerWidth / cellSize);
-            const gridHeight = Math.floor(window.innerHeight / cellSize);
-            return { gridWidth, gridHeight };
+      function calculateGridSize() {
+        const gridWidth = Math.floor(window.innerWidth / cellSize);
+        const gridHeight = Math.floor(window.innerHeight / cellSize);
+        return { gridWidth, gridHeight };
+      }
+
+      function createGrid() {
+        const { gridWidth, gridHeight } = calculateGridSize();
+        cells = [];
+        gridElement.innerHTML = "";
+        gridElement.style.gridTemplateColumns = `repeat(${gridWidth}, ${cellSize}px)`;
+        gridElement.style.gridTemplateRows = `repeat(${gridHeight}, ${cellSize}px)`;
+
+        for (let y = 0; y < gridHeight; y++) {
+          let row = [];
+          for (let x = 0; x < gridWidth; x++) {
+            const cell = document.createElement("div");
+            cell.classList.add("cell");
+            cell.style.width = `${cellSize}px`;
+            cell.style.height = `${cellSize}px`;
+            cell.addEventListener("mousedown", (e) => handleMouseDown(e, x, y));
+            cell.addEventListener("mouseover", (e) => handleMouseOver(e, x, y));
+            gridElement.appendChild(cell);
+            row.push(false);
+          }
+          cells.push(row);
         }
 
-        function createGrid() {
-            const { gridWidth, gridHeight } = calculateGridSize();
-            cells = [];
-            gridElement.innerHTML = "";
-            gridElement.style.gridTemplateColumns = `repeat(${gridWidth}, ${cellSize}px)`;
-            gridElement.style.gridTemplateRows = `repeat(${gridHeight}, ${cellSize}px)`;
+        document.addEventListener("mouseup", handleMouseUp);
+      }
 
-            for (let y = 0; y < gridHeight; y++) {
-                let row = [];
-                for (let x = 0; x < gridWidth; x++) {
-                    const cell = document.createElement("div");
-                    cell.classList.add("cell");
-                    cell.style.width = `${cellSize}px`;
-                    cell.style.height = `${cellSize}px`;
-                    cell.addEventListener("mousedown", (e) => handleMouseDown(e, x, y));
-                    cell.addEventListener("mouseover", (e) => handleMouseOver(e, x, y));
-                    gridElement.appendChild(cell);
-                    row.push(false);
-                }
-                cells.push(row);
+      function handleMouseDown(event, x, y) {
+        isMouseDown = true;
+        toggleMode = !cells[y][x];
+        lastCellPosition = { x, y };
+        toggleCell(x, y);
+      }
+
+      function handleMouseOver(event, x, y) {
+        if (isMouseDown) {
+          fillCellsAlongPath(lastCellPosition, { x, y });
+          lastCellPosition = { x, y };
+        }
+      }
+
+      function handleMouseUp() {
+        isMouseDown = false;
+        lastCellPosition = null;
+      }
+
+      function toggleCell(x, y) {
+        cells[y][x] = toggleMode;
+        updateCell(x, y);
+      }
+
+      function updateCell(x, y) {
+        const cellElement = gridElement.children[y * cells[0].length + x];
+        if (cells[y][x]) {
+          cellElement.classList.add("alive");
+        } else {
+          cellElement.classList.remove("alive");
+        }
+      }
+
+      function fillCellsAlongPath(start, end) {
+        const dx = Math.abs(end.x - start.x);
+        const dy = Math.abs(end.y - start.y);
+        const sx = start.x < end.x ? 1 : -1;
+        const sy = start.y < end.y ? 1 : -1;
+        let err = dx - dy;
+
+        let x = start.x;
+        let y = start.y;
+        while (x !== end.x || y !== end.y) {
+          toggleCell(x, y);
+          const e2 = err * 2;
+          if (e2 > -dy) {
+            err -= dy;
+            x += sx;
+          }
+          if (e2 < dx) {
+            err += dx;
+            y += sy;
+          }
+        }
+        toggleCell(end.x, end.y);
+      }
+
+      function nextGeneration() {
+        const newCells = cells.map((row, y) =>
+          row.map((alive, x) => {
+            const neighbors = countAliveNeighbors(x, y);
+            if (alive) return neighbors === 2 || neighbors === 3;
+            return neighbors === 3;
+          }),
+        );
+
+        cells = newCells;
+        updateGrid();
+      }
+
+      function countAliveNeighbors(x, y) {
+        let count = 0;
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            if (dx === 0 && dy === 0) continue;
+            const nx = x + dx;
+            const ny = y + dy;
+            if (
+              nx >= 0 &&
+              ny >= 0 &&
+              nx < cells[0].length &&
+              ny < cells.length &&
+              cells[ny][nx]
+            ) {
+              count++;
             }
-
-            document.addEventListener("mouseup", handleMouseUp);
+          }
         }
+        return count;
+      }
 
-        function handleMouseDown(event, x, y) {
-            isMouseDown = true;
-            toggleMode = !cells[y][x];
-            lastCellPosition = { x, y };
-            toggleCell(x, y);
-        }
-
-        function handleMouseOver(event, x, y) {
-            if (isMouseDown) {
-                fillCellsAlongPath(lastCellPosition, { x, y });
-                lastCellPosition = { x, y };
-            }
-        }
-
-        function handleMouseUp() {
-            isMouseDown = false;
-            lastCellPosition = null;
-        }
-
-        function toggleCell(x, y) {
-            cells[y][x] = toggleMode;
+      function updateGrid() {
+        for (let y = 0; y < cells.length; y++) {
+          for (let x = 0; x < cells[y].length; x++) {
             updateCell(x, y);
+          }
         }
+      }
 
-        function updateCell(x, y) {
-            const cellElement = gridElement.children[y * cells[0].length + x];
-            if (cells[y][x]) {
-                cellElement.classList.add("alive");
-            } else {
-                cellElement.classList.remove("alive");
-            }
-        }
+      createGrid();
+      interval = setInterval(nextGeneration, 200);
 
-        function fillCellsAlongPath(start, end) {
-            const dx = Math.abs(end.x - start.x);
-            const dy = Math.abs(end.y - start.y);
-            const sx = start.x < end.x ? 1 : -1;
-            const sy = start.y < end.y ? 1 : -1;
-            let err = dx - dy;
-
-            let x = start.x;
-            let y = start.y;
-            while (x !== end.x || y !== end.y) {
-                toggleCell(x, y);
-                const e2 = err * 2;
-                if (e2 > -dy) {
-                    err -= dy;
-                    x += sx;
-                }
-                if (e2 < dx) {
-                    err += dx;
-                    y += sy;
-                }
-            }
-            toggleCell(end.x, end.y);
-        }
-
-        function nextGeneration() {
-            const newCells = cells.map((row, y) =>
-                row.map((alive, x) => {
-                    const neighbors = countAliveNeighbors(x, y);
-                    if (alive) return neighbors === 2 || neighbors === 3;
-                    return neighbors === 3;
-                })
-            );
-
-            cells = newCells;
-            updateGrid();
-        }
-
-        function countAliveNeighbors(x, y) {
-            let count = 0;
-            for (let dy = -1; dy <= 1; dy++) {
-                for (let dx = -1; dx <= 1; dx++) {
-                    if (dx === 0 && dy === 0) continue;
-                    const nx = x + dx;
-                    const ny = y + dy;
-                    if (nx >= 0 && ny >= 0 && nx < cells[0].length && ny < cells.length && cells[ny][nx]) {
-                        count++;
-                    }
-                }
-            }
-            return count;
-        }
-
-        function updateGrid() {
-            for (let y = 0; y < cells.length; y++) {
-                for (let x = 0; x < cells[y].length; x++) {
-                    updateCell(x, y);
-                }
-            }
-        }
-
+      window.addEventListener("resize", () => {
+        clearInterval(interval);
         createGrid();
         interval = setInterval(nextGeneration, 200);
-
-        window.addEventListener("resize", () => {
-            clearInterval(interval);
-            createGrid();
-            interval = setInterval(nextGeneration, 200);
-        });
+      });
     </script>
-</body>
+  </body>
 </html>
